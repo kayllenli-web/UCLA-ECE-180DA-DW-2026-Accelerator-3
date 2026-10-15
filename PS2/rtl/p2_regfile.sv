@@ -85,9 +85,11 @@ module p2_regfile
   // --------------------------------------------------------------------------
   always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
-      // <-- fill in: clear all registers
+      for (int i = 0; i < NUM_REGS; i++) regs_q[i] <= '0;
     end
-    // <-- fill in: the guarded write
+    else if (wr_i.en && (wr_i.addr != '0)) begin
+      regs_q[wr_i.addr] <= wr_i.data;
+    end
   end
 
   // --------------------------------------------------------------------------
@@ -98,6 +100,23 @@ module p2_regfile
   // and the same for rs2. Get this working and passing the first group of
   // testbench checks before you touch part (c).
   // --------------------------------------------------------------------------
+
+  // assign rs1_data_o = '0;   // <-- replace (2b, then extend for 2c)
+  // assign rs2_data_o = '0;   // <-- replace (2b, then extend for 2c)
+
+  // always_comb begin
+  // if (rs1_addr_i == '0)
+  //   rs1_data_o = '0;
+  // else
+  //   rs1_data_o = regs_q[rs1_addr_i];
+  // end
+
+  // always_comb begin
+  //   if (rs2_addr_i == '0)
+  //     rs2_data_o = '0;
+  //   else
+  //     rs2_data_o = regs_q[rs2_addr_i];
+  // end
 
   // --------------------------------------------------------------------------
   // TODO 2c -- write-to-read bypass (also called read-during-write forwarding).
@@ -130,7 +149,28 @@ module p2_regfile
   // real design.
   // --------------------------------------------------------------------------
 
-  assign rs1_data_o = '0;   // <-- replace (2b, then extend for 2c)
-  assign rs2_data_o = '0;   // <-- replace (2b, then extend for 2c)
+  logic bypass_rs1, bypass_rs2;
+
+  // collision: bypass is on, write enabled, same address, and not r0
+  assign bypass_rs1 = bypass_en_i && wr_i.en && (wr_i.addr == rs1_addr_i) && (rs1_addr_i != '0);
+  assign bypass_rs2 = bypass_en_i && wr_i.en && (wr_i.addr == rs2_addr_i) && (rs2_addr_i != '0);
+
+  always_comb begin
+    if (bypass_rs1)
+      rs1_data_o = wr_i.data;
+    else if (rs1_addr_i == '0)
+      rs1_data_o = '0;
+    else
+      rs1_data_o = regs_q[rs1_addr_i];
+  end
+ 
+  always_comb begin
+    if (bypass_rs2)
+      rs2_data_o = wr_i.data;
+    else if (rs2_addr_i == '0)
+      rs2_data_o = '0;
+    else
+      rs2_data_o = regs_q[rs2_addr_i];
+  end
 
 endmodule

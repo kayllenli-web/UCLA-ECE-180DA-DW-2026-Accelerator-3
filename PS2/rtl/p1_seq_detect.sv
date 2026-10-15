@@ -109,19 +109,33 @@ module p1_seq_detect (
 
     case (state_q)
       S_IDLE: begin
-        // <-- fill in
+        if (bit_i) 
+          state_d = S_1;        // a 1 starts a prefix
+        else       
+          state_d = S_IDLE;     // a 0 gets us nowhere
       end
 
       S_1: begin
-        // <-- fill in
+        if (bit_i) 
+          state_d = S_11;       // "11"
+        else       
+          state_d = S_IDLE;     // "10" -> no live prefix
       end
 
       S_11: begin
-        // <-- fill in
+        if (bit_i) 
+          state_d = S_11;       // "111" still ends with "11"
+        else       
+          state_d = S_110;      // "110"
       end
 
       S_110: begin
-        // <-- fill in
+        if (bit_i) begin
+          found_o = 1'b1;                // 1101 just completed: MATCH
+          state_d = S_1;                 // trailing 1 is a live prefix (overlap)
+        end else begin
+          state_d = S_IDLE;              // "1100" -> no live prefix
+        end
       end
 
       default: begin
@@ -135,7 +149,10 @@ module p1_seq_detect (
   // Two lines.
   // --------------------------------------------------------------------------
   always_ff @(posedge clk_i) begin
-    // <-- fill in
+    if (!rst_ni) 
+      state_q <= S_IDLE;
+    else         
+      state_q <= state_d;
   end
 
   // --------------------------------------------------------------------------
@@ -155,7 +172,9 @@ module p1_seq_detect (
     if (!rst_ni) begin
       count_q <= '0;
     end
-    // <-- fill in: increment on found_o, saturating at 8'hFF
+    else if (found_o && (count_q != 8'hFF)) begin
+      count_q <= count_q + 8'd1;
+    end
   end
 
   assign count_o = count_q;
