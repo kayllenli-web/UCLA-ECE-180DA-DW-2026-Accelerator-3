@@ -10,19 +10,8 @@ module acc_pool2x2 (
     // Drive the largest value to max_o
     // All four values must belong to the same 2 x 2 spatial window
 
-    always_comb begin
-    if (x_i[0] >= x_i[1])
-        x1 = x_i[0];
-    else 
-        x1 = x_i[1]
-    if (x_i[3] >= x_i[2])
-        x2 = x_i[3];
-    else 
-        x2 = x_i[2];
-    
-    if (x1 > x2)
-        max_o = x1;
-    else
-        max_o = x2;
-end
+    // A two-level combinational max tree: three unsigned 8-bit comparisons.
+    assign x1    = (x_i[0] >= x_i[1]) ? x_i[0] : x_i[1];
+    assign x2    = (x_i[2] >= x_i[3]) ? x_i[2] : x_i[3];
+    assign max_o = (x1 >= x2) ? x1 : x2;
 endmodule
