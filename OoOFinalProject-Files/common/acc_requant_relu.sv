@@ -1,4 +1,5 @@
-// acc_requant_relu.sv -- Bias, requantization, ReLU, and clipping for convolution
+// acc_requant_relu.sv
+// Bias, requantization, ReLU, and clipping for convolution
 
 module acc_requant_relu #(
     parameter int unsigned ACC_W = 40,
@@ -9,10 +10,24 @@ module acc_requant_relu #(
     input logic [5:0] shift_i,
     output logic [7:0] data_o
 );
+    logic signed [ACC_W:0] sum_plus_bias;
+    logic signed [ACC_W:0] bias_extended;
+    logic signed [ACC_W:0] shifted_val;
 
-    // Combinational logic: extend/add the int32 bias to the wide sum
-    // Apply the agreed shift/rounding rule, ReLU, and output saturation
-    // Confirm intermediate format and clipping with the course reference
-    // Do not use this convolution block on the final FC logits
+    always_comb begin
+        // The 41-bit intermediate preserves the signed 40-bit sum and the
+        // signed 32-bit bias before the arithmetic right shift.
+        bias_extended = {{(ACC_W-30){bias_i[31]}}, bias_i};
+        sum_plus_bias = {sum_i[ACC_W-1], sum_i} + bias_extended;
+
+        shifted_val = sum_plus_bias >>> shift_i;
+
+        if (shifted_val <= 0)
+            data_o = 8'd0;
+        else if (shifted_val > 255)
+            data_o = 8'd255;
+        else
+            data_o = shifted_val[7:0];
+    end
 
 endmodule
