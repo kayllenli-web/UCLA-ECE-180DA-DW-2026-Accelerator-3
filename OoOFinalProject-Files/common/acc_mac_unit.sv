@@ -12,13 +12,16 @@ module acc_mac_unit #(
     logic signed [ACT_W+WGT_W-1:0] product;
     logic signed [ACC_W-1:0]       product_extended;
 
-    // Both inputs are signed at this boundary.  The operand stage zero-extends
-    // the shared unsigned 8-bit activation into act_i before it reaches here.
-    // acc_accumulator.
+    // acc_accumulator
     always_comb begin
         product = act_i * wgt_i;
-        product_extended = {{(ACC_W-(ACT_W+WGT_W)){product[ACT_W+WGT_W-1]}}, product};
-        result_o         = acc_i + product_extended;
-    end
+
+        // sign extension
+        product_extended = {
+            {(ACC_W-(ACT_W+WGT_W)){product[ACT_W+WGT_W-1]}
+            }, product};
+
+            result_o = acc_i + product_extended;
+        end
 
 endmodule

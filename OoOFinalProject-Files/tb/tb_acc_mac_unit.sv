@@ -1,6 +1,5 @@
 // Focused self-checking testbench for the combinational MAC datapath.
 module tb_acc_mac_unit;
-
     localparam int unsigned ACT_W = 9;
     localparam int unsigned WGT_W = 8;
     localparam int unsigned ACC_W = 40;
