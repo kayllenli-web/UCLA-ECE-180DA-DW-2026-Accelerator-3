@@ -17,7 +17,7 @@ module acc_requant_relu #(
     always_comb begin
         // The 41-bit intermediate preserves the signed 40-bit sum and the
         // signed 32-bit bias before the arithmetic right shift.
-        bias_extended = {{(ACC_W-30){bias_i[31]}}, bias_i};
+        bias_extended = {{(ACC_W-31){bias_i[31]}}, bias_i};
         sum_plus_bias = {sum_i[ACC_W-1], sum_i} + bias_extended;
 
         shifted_val = sum_plus_bias >>> shift_i;
