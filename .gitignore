@@ -1,3 +1,6 @@
 # Local working notes and activity logs; never commit these.
 /docs/
 .editorconfig
+/OoOFinalProject-Files/build/
+/OoOFinalProject-Files/test_results/
+__pycache__/

@@ -96,6 +96,13 @@ module tb_acc_pe_array;
         @(posedge clk_i);
         check_sums(-32640, 0, 0, 0);
 
+        @(negedge clk_i);
+        issue_i = 0; lane_en_i = '1; wgt_i = 8'sd100;
+        @(posedge clk_i); check_sums(-32640, 0, 0, 0);
+        @(negedge clk_i);
+        clear_i = 1; issue_i = 1;
+        @(posedge clk_i); check_sums(0, 0, 0, 0);
+
         $display("tb_acc_pe_array: PASS");
         $finish;
     end
