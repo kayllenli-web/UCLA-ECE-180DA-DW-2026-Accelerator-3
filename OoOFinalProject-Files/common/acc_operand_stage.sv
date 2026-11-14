@@ -41,7 +41,7 @@ module acc_operand_stage
     assign tap_ready_o = rst_ni && state_q == IDLE;
     assign rd_en_o = rst_ni && state_q == FETCH && !rd_sent_q;
     assign weight_req_valid_o = rst_ni && state_q == FETCH && !weight_sent_q;
-    assign weight_ready_o = rst_ni && state_q == FETCH && !weight_q;
+    assign weight_ready_o = rst_ni && state_q == FETCH && weight_sent_q && !weight_q;
     assign weight_index_o = index_q;
     assign weight_layer2_o = layer2_q;
     assign clear_o = rst_ni && state_q == CLEAR && !error_q;
