@@ -49,6 +49,12 @@ module tb_acc_accumulator;
         clear_i = 1'b1; en_i = 1'b1; d_i = 40'sd77;
         @(posedge clk_i); check_value(40'sd0);
 
+        @(negedge clk_i);
+        rst_ni = 1'b0; clear_i = 1'b1; en_i = 1'b1; d_i = 40'sd99;
+        @(posedge clk_i); check_value(40'sd0);
+        @(negedge clk_i); rst_ni = 1'b1; clear_i = 1'b0;
+        @(posedge clk_i); check_value(40'sd99);
+
         $display("tb_acc_accumulator: PASS");
         $finish;
     end

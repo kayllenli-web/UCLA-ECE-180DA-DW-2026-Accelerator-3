@@ -40,6 +40,12 @@ module tb_acc_pool2x2;
             $fatal(1, "pool max test failed");
         end
 
+        lane0_i[0] = 0; lane0_i[1] = 200;
+        #1;
+        if (lane0_o !== 200) $fatal(1, "Pool did not respond to changed inputs");
+        lane0_i[1] = 0;
+        #1;
+        if (lane0_o !== 4) $fatal(1, "Pool retained a previous maximum");
         $display("tb_acc_pool2x2: PASS");
         $finish;
     end

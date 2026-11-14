@@ -51,6 +51,9 @@ module tb_acc_mac_unit;
         // A negative running sum plus a negative product stays negative.
         check(9'sd31, -8'sd9,   -40'sd200,   -40'sd479);
 
+        for (int n = 0; n < 256; n++)
+            check(9'(n), 8'(n-128), 40'(int'(n*3-400)), 40'(int'(n*(n-128)+n*3-400)));
+
         $display("tb_acc_mac_unit: PASS");
         $finish;
     end

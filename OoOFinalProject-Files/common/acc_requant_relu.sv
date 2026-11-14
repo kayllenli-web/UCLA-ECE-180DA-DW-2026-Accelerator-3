@@ -14,6 +14,8 @@ module acc_requant_relu #(
     logic signed [ACC_W:0] bias_extended;
     logic signed [ACC_W:0] shifted_val;
 
+    localparam logic signed [ACC_W:0] CLIP_MAX = OUT_UNSIGNED ? 255 : 127;
+
     always_comb begin
         // The 41-bit intermediate preserves the signed 40-bit sum and the
         // signed 32-bit bias before the arithmetic right shift.
@@ -24,8 +26,8 @@ module acc_requant_relu #(
 
         if (shifted_val <= 0)
             data_o = 8'd0;
-        else if (shifted_val > 255)
-            data_o = 8'd255;
+        else if (shifted_val > CLIP_MAX)
+            data_o = CLIP_MAX[7:0];
         else
             data_o = shifted_val[7:0];
     end

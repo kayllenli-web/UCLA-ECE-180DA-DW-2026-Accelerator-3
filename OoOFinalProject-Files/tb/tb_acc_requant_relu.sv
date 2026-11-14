@@ -7,6 +7,11 @@ module tb_acc_requant_relu;
     acc_t bias_i;
     logic [5:0] shift_i;
     logic [7:0] data_o;
+    logic [7:0] signed_range_o;
+
+    acc_requant_relu #(.ACC_W(ACC_W), .OUT_UNSIGNED(1'b0)) signed_range (
+        .sum_i, .bias_i, .shift_i, .data_o(signed_range_o)
+    );
 
     acc_requant_relu #(.ACC_W(ACC_W)) dut (
         .sum_i,
@@ -26,6 +31,8 @@ module tb_acc_requant_relu;
             bias_i = test_bias;
             shift_i = test_shift;
             #1;
+            if (signed_range_o !== ((expected_data > 127) ? 8'd127 : expected_data))
+                $fatal(1, "Signed output range mismatch");
             if (data_o !== expected_data) begin
                 $fatal(1, "sum=%0d bias=%0d shift=%0d: got %0d, expected %0d",
                        sum_i, bias_i, shift_i, data_o, expected_data);
@@ -50,6 +57,12 @@ module tb_acc_requant_relu;
 
         // A wide sum plus a negative int32 bias remains signed and precise.
         check_value(40'sd1_000_000, -32'sd999_800, 6'd0, 8'd200);
+        check_value(40'sd127, 32'sd0, 6'd0, 8'd127);
+        check_value(40'sd128, 32'sd0, 6'd0, 8'd128);
+        check_value(40'sd0, -32'sd2147483647, 6'd0, 8'd0);
+        check_value(40'sd0, 32'sd2147483647, 6'd0, 8'd255);
+        check_value(40'sh7fffffffff, 32'sd2147483647, 6'd39, 8'd1);
+        check_value(40'sd100, 32'sd0, 6'd63, 8'd0);
 
         $display("tb_acc_requant_relu: PASS");
         $finish;
