@@ -125,7 +125,10 @@ module acc_memory_subsystem
                     loaded_o <= 0;
                     a_valid_q <= '0; b_valid_q <= '0;
                     if (img_base_i[1:0] != 0 || wgt_base_i[1:0] != 0 || param_base_i[1:0] != 0
-                        || image_offset_i[1:0] != 0 || image_offset_i > IMG_MEM_BYTES-IMG_PIXELS) begin
+                        || image_offset_i[1:0] != 0 || image_offset_i > IMG_MEM_BYTES-IMG_PIXELS
+                        || ({1'b0, img_base_i}+{1'b0, image_offset_i}+33'(IMG_PIXELS)) > 33'h100000000
+                        || ({1'b0, wgt_base_i}+33'(WGT_MEM_BYTES)) > 33'h100000000
+                        || ({1'b0, param_base_i}+33'(4*PARAM_WORDS)) > 33'h100000000) begin
                         load_done_o <= 1; error_o <= 1;
                     end else begin
                         img_base_q <= img_base_i; wgt_base_q <= wgt_base_i; param_base_q <= param_base_i;
