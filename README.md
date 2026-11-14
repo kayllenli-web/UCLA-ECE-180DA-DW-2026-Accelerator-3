@@ -1,71 +1,77 @@
-## Shared definitions
+# Group 3 CNN Accelerator
 
-We use the definitions already in `common/` instead of making separate copies
+Four-lane CNN accelerator for ECE 180DA/DW, targeting an FPGA
+The current tests cover arithmetic, local memory, convolution scheduling and operand alignment
+The full inference top and processor integration are still unfinished
 
-- `accelerator_pkg.sv`: Network dimensions, memory layouts, CSR addresses, and shared data types
-- `csr_accelerator_if.sv`: Sends job settings to the accelerator and returns done/error status
-- `data_memory_if.sv`: Shared memory interface, with our connection still to be worked out
+## 1. Requirements
 
-`rtl/acc_pkg.sv` only holds details specific to our design, including the four lanes, internal sum width, and convolution indices
+- Verilator 5.x
+- GNU Make
+- A C++20 compiler such as G++ 11 or newer
+- Python 3
 
-Our proposed internal sums are 40 bits, while the shared accumulator type is 32 bits
-We still need to check how these match the reference calculations
+Run the commands below in WSL or Linux
 
-## Current files
+## 2. Run all tests
 
-We have 12 files, including one package
-These are templates with ports and comments
-The logic still needs to be written
+From the repository root:
 
-- `rtl/acc_pkg.sv`: Internal constants and types
-- `rtl/acc_mac_unit.sv`: Multiplies an input by a weight and adds the previous sum
-- `rtl/acc_accumulator.sv`: Stores the running sum
-- `rtl/acc_pe_array.sv`: Connects four MAC lanes that share one weight
-- `rtl/acc_tile_scratchpad.sv`: Stores the input patch in four memory banks
-- `rtl/acc_conv_schedule.sv`: Tracks the tile, filter, input channel, and kernel position
-- `rtl/acc_requant_relu.sv`: Adds bias, converts the result, and applies ReLU and clipping
-- `rtl/acc_pool2x2.sv`: Takes the largest of four outputs
-- `rtl/acc_job_controller.sv`: Controls the order of loading, convolution, pooling, FC, and completion
-- `rtl/acc_memory_subsystem.sv`: Holds the global memories and loads image, weight, and parameter data
-- `rtl/acc_operand_stage.sv`: Routes input values to the correct lanes and lines them up with buffered weights
-- `rtl/accelerator_top.sv`: Connects the blocks and handles the processor interface
+```bash
+cd OoOFinalProject-Files
+python3 tb/run_tests.py
+```
 
-We renamed `acc_top` to `accelerator_top` to match the testbench
-It currently has clock, reset, and CSR ports, but still needs the memory and debug ports
+The runner stops if a test fails
+Each successful test prints PASS
+Build files are saved in `build/` and logs in `test_results/`
 
-The three newest templates have clock/reset ports only
-Their remaining ports still need to be added as we agree on the connections
+For lint checks only:
 
-## How the work is divided
+```bash
+python3 tb/run_tests.py --lint
+```
 
-- `acc_job_controller` decides which stage runs next
-- `acc_conv_schedule` controls the loops within each convolution layer
-- `acc_memory_subsystem` includes source loading and global scratchpad control
-- `acc_operand_stage` includes a small weight buffer and aligns data before issuing a MAC update
-- `accelerator_top` connects everything and initially holds CSR handling, FC sequencing, argmax, and result registers
+## 3. Run an individual test
 
-We are keeping these responsibilities within the 12 files for now
-We can split them into smaller modules later if needed
+Run these from `OoOFinalProject-Files`
 
-## Work remaining
+| Test | What it checks | Command |
+| --- | --- | --- |
+| MAC | Signed multiplication and addition | `python3 tb/run_tests.py acc_mac_unit` |
+| Accumulator | Reset, clear, enable and hold | `python3 tb/run_tests.py acc_accumulator` |
+| PE array | Four lanes, shared weights and lane enables | `python3 tb/run_tests.py acc_pe_array` |
+| Requantization and ReLU | Bias, shifts, ReLU and clipping | `python3 tb/run_tests.py acc_requant_relu` |
+| Pooling | Maximum of four values | `python3 tb/run_tests.py acc_pool2x2` |
+| Tile scratchpad | Bank writes, reads and synchronous timing | `python3 tb/run_tests.py acc_tile_scratchpad` |
+| Convolution scheduler | Coordinates, stalls and layer completion | `python3 tb/run_tests.py acc_conv_schedule` |
+| Operand stage | Pixel routing and weight alignment | `python3 tb/run_tests.py acc_operand_stage` |
+| Memory subsystem | Loading, patch fills, features, errors and reset | `python3 tb/run_tests.py acc_memory_subsystem` |
+| Integrated Phase 2 | Matching pixels, weights and MAC sums under delays and stalls | `python3 tb/run_tests.py acc_phase2` |
 
-- Write and test the logic inside the templates
-- Load the image, weights, and parameters using the agreed memory connection
-- Connect the scheduler, scratchpad, operand stage, and MAC lanes
-- Add bias, requantization, ReLU, and pooling
-- Connect both convolution layers and the fully connected layer
-- Compare the ten scores and store the predicted digit
-- Finish the processor, memory, debug, and result connections
+The Phase 2 test uses preloaded Conv2 features and does not test full CNN inference
+## 4. Recorded test results
 
-## Things to resolve
+All ten testbenches passed Verilator lint and simulation in the recorded runs
+Nine final simulations ran on Windows
+The integrated test passed in WSL using Verilator 5.048 and G++ 11.4
+Rerun the tests after copying or changing the code
 
-- The support files use both `accelerator_pkg` and `accelerator_cnn_pkg`
-- Some memory, debug, and golden-model files referenced by the testbench are missing
-- We need to agree on the memory connection and match the testbench ports
-- The testbench needs access to intermediate layer results
-- Internal arithmetic and output conversion must match the reference model
+| Integrated run | Accepted four-lane taps | Completed reductions |
+| --- | ---: | ---: |
+| Conv1, image offset 0x400 | 10800 | 432 |
+| Conv2, preloaded features | 3600 | 48 |
+| Conv1 after reset, image offset 0 | 10800 | 432 |
 
-## Current checks
+The test checked pixels, weights and MAC sums while responses were delayed and the output stalled
+The WSL build reported a Make clock-skew warning, but the simulation finished with PASS
 
-Syntax parsing passed for the templates
-Simulation, synthesis, and integration have not been tested yet
+## 5. Still unfinished
+
+- Full CNN inference and comparison with the course golden model
+- Computed Conv1 pooled outputs feeding Conv2 without testbench preloading
+- Job control, FC, argmax and processor/result/debug connections
+- Synthesis, FPGA resource use and timing checks
+
+The Phase 2 fixture models downstream result acceptance rather than testing the final hardware writeback
+The 40-bit internal sums still need to match the reference arithmetic when narrowed
